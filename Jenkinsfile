@@ -3,25 +3,19 @@ pipeline {
     stages {
         stage('Clone') {
             steps {
-                // Clone the React app
-                git url: 'https://github.com/rikka-maj123/reactjsawsload.git'
-                
-                // Clone the Angular app
-                git url: 'https://github.com/rikka-maj123/angularawsload.git'
+                script {
+                    // Clone the React app from GitHub
+                    git url: 'https://github.com/rikka-maj123/reactjsawsload.git'
+                }
             }
         }
         stage('Build') {
             steps {
                 script {
-                    // Build React app
-                    dir('reactawsjenkins') {
+                    // Navigate to the React app directory and build the app
+                    dir('/home/jenkins/reactjsawsload') {
                         sh 'npm install'
                         sh 'npm run build'
-                    }
-                    // Build Angular app
-                    dir('angularawsload') {
-                        sh 'npm install'
-                        sh 'ng build --prod'
                     }
                 }
             }
@@ -29,9 +23,27 @@ pipeline {
         stage('Deploy') {
             steps {
                 script {
-                    // Use SSH to copy files to the EC2 instance
-                    sh "scp -o StrictHostKeyChecking=no -r reactawsjenkins/build/* ubutnu@13.229.67.88:/var/www/react" // Replace with your EC2 public IP and path
-                    sh "scp -o StrictHostKeyChecking=no -r angularawsload/dist/* ubuntu@13.229.67.88:/var/www/angular" // Replace with your EC2 public IP and path
+                    // Use SCP to copy the build files to the EC2 instance
+                    sh 'scp -i /home/jenkins/reactprivate -r /home/jenkins/reactjsawsload/build/* ubuntu@13.229.67.88://home/ubuntu/'
+
+                    // SSH into the EC2 instance to configure Nginx
+                    sh '''
+                    ssh -i /home/jenkins/reactprivate ubuntu@13.229.67.88 << EOF
+                    sudo mv /etc/nginx/nginx.conf /etc/nginx/nginx.conf.bak
+                    echo "server {
+                        listen 80;
+                        server_name 13.229.67.88;
+
+                        location / {
+                            root /home/ubuntu;
+                            index index.html index.htm;
+                            try_files \$uri \$uri/ /index.html;
+                        }
+                    }" | sudo tee /etc/nginx/nginx.conf
+
+                    sudo systemctl restart nginx
+                    EOF
+                    '''
                 }
             }
         }
