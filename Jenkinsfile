@@ -1,33 +1,28 @@
 pipeline {
     agent any
 
-    environment {
-        GIT_REPO = 'https://github.com/rikka-maj123/reactjsawsload.git'
-        DEPLOY_SERVER = 'ubuntu@13.229.67.88'
-        DEPLOY_PATH = '/home/ubuntu/your-react-app'
-        SSH_KEY = 'reactprivate'
-    }
-
     stages {
-        stage('Clone Repository') {
+        stage('Clone React App') {
             steps {
-                git url: "https://github.com/rikka-maj123/reactjsawsload.git"
+                git 'https://github.com/rikka-maj123/reactjsawsload.git'
             }
         }
 
-        stage('Build') {
+        stage('Install Dependencies') {
             steps {
                 sh 'npm install'
+            }
+        }
+
+        stage('Build React App') {
+            steps {
                 sh 'npm run build'
             }
         }
 
-        stage('Deploy') {
+        stage('Deploy React App') {
             steps {
-                sshagent(['react-deploy-ssh-key']) {
-                    sh "ssh -i ~/.ssh/${SSH_KEY} ${DEPLOY_SERVER} 'mkdir -p ${DEPLOY_PATH}'"
-                    sh "scp -i ~/.ssh/${SSH_KEY} -r build/* ${DEPLOY_SERVER}:${DEPLOY_PATH}"
-                }
+                sh 'rsync -avz -e "ssh -i /home/jenkins/.ssh/id_rsa" /var/lib/jenkins/workspace/react-app/build/ ubuntu@your-react-ec2-ip:/var/www/html/react'
             }
         }
     }
