@@ -22,7 +22,7 @@ pipeline {
 
         stage('Deploy React App') {
             steps {
-                sh 'rsync -avz -e "ssh -i /home/jenkins/.ssh/id_rsa" /var/lib/jenkins/workspace/react-app/build/ ubuntu@your-react-ec2-ip:/var/www/html/react'
+                sh 'rsync -avz -e "ssh -i /home/jenkins/.ssh/id_rsa" /var/lib/jenkins/workspace/react-app/build/ ubuntu@18.141.185.119:/var/www/html/react'
             }
         }
     }
